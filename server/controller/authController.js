@@ -93,3 +93,22 @@ export const logOut = async(req,res)=>{
         
     }
 }
+export const sendVerifyOtp = async (req,res)=>{
+    const {userId}= req.body;
+    const user = await userModel.findById(userId)
+    if(user.isAccountVerified){
+        return res.json({success:false,message:'Account already verified'})
+    }
+    const otp= String(Math.floor(100000+Math.random()*900000))
+    user.verifyOtp=otp;
+    user.verifyOtpExpireAt=Date.now()+24*60*60*1000
+    await user.save()
+    const mailOption={
+        from:process.env.SENDER_EMAIL,
+        to:user.email,
+        subject:'Account Verification OTP',
+        text:`Your OTP ${otp}`
+    }
+    await transproter.sendMail(mailOption)
+    res.json({success:true,message:'verification send'})
+}
