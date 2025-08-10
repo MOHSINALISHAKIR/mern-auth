@@ -5,4 +5,4 @@ const connectDB = async ()=>{
     })
     await mongoose.connect(`${process.env.MONGODB_URL}/mernauth`)
 }
-export default connectDB;
+export default connectDB; 
