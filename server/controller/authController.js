@@ -44,7 +44,8 @@ export const login = async(req,res)=>{
         return res.json({success:false,message:'Email and Password Required'})
     }
     try {
-        const user = await userModel.find({email})
+        const user = await userModel.findOne({email})
+        console.log(user)
         if(!user){
             return res.json({success:false,message:'invalid credentials...'})
         }
