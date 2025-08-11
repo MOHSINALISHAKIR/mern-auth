@@ -93,32 +93,38 @@ export const logOut = async(req,res)=>{
         
     }
 }
-export const sendVerifyOtp = async (req,res)=>{
-    const {userId}= req.body;
-    const user = await userModel.findById(userId)
-    if(user.isAccountVerified){
-        return res.json({success:false,message:'Account already verified'})
+export const sendVerifyOtp = async (req, res) => {
+    const user = await userModel.findById(req.userId); // Use ID from middleware
+    if (!user) {
+        return res.json({ success: false, message: 'User not found' });
     }
-    const otp= String(Math.floor(100000+Math.random()*900000))
-    user.verifyOtp=otp;
-    user.verifyOtpExpireAt=Date.now()+24*60*60*1000
-    await user.save()
-    const mailOption={
-        from:process.env.SENDER_EMAIL,
-        to:user.email,
-        subject:'Account Verification OTP',
-        text:`Your OTP ${otp}`
+    if (user.isAccountVerified) {
+        return res.json({ success: false, message: 'Account already verified' });
     }
-    await transproter.sendMail(mailOption)
-    res.json({success:true,message:'verification send'})
-}
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000;
+
+    await user.save();
+
+    const mailOption = {
+        from: process.env.SENDER_EMAIL,
+        to: user.email,
+        subject: 'Account Verification OTP',
+        text: `Your OTP ${otp}`,
+    };
+
+    await transproter.sendMail(mailOption);
+    res.json({ success: true, message: 'Verification OTP sent' });
+};
 export const verifyEmail = async (req,res)=>{
-    const {userId,otp}= req.body;
-    if(!userId||!otp){
+    const {otp}= req.body;
+    if(!otp){
         return res.json({success:false,message:'send otp please'})
     }
     try {
-        const user= await userModel.findById(userId)
+        const user= await userModel.findById(req.userId)
         if(!user){
             return res.json({success:false,message:'user not found'})
         }
@@ -129,6 +135,7 @@ export const verifyEmail = async (req,res)=>{
             return res.json({success:false,message:'otp expired'})
         }
         user.isAccountVerified=true
+        user.verifyOtp=''
         user.verifyOtpExpireAt=0
         await user.save()
         return res.json({success:true,message:'email verified'})
